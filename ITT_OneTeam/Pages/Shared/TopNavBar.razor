@@ -1,0 +1,98 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims;
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+@{
+    string PageTitle = "ITT  One Team";
+    if (currentUrl.StartsWith("fact"))
+    {
+        PageTitle = $"FACT - {PageTitle}";
+    }
+    else if (currentUrl.StartsWith("sql/jobs"))
+    {
+        PageTitle = $"SQL Jobs - {PageTitle}";
+    }
+}
+
+<PageTitle>@PageTitle</PageTitle>
+
+<AuthorizeView Context="AuthContext" Roles="Reader">
+
+<nav class="navbar navbar-expand-sm bg-dark" style="background-color:#213040 !important;">
+    <div class="container-fluid">
+        <a class="navbar-brand pt-0" href="#">
+            <div class="row">
+                <div class="col pe-0"><img src="/itt_logo.png" style="height:40px; filter: drop-shadow(1px 4px 2px gray);" /></div>
+                <div class="col lh-1">
+                    <span class="fw-lighter" style="color:#e63e24; font-size:2.5rem; letter-spacing:3pt; text-shadow:1pt 2pt 2pt gray;">ITT</span>
+                </div>
+            </div>
+
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">            
+
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+
+                    <li class="nav-item mt-2 me-2 @(currentUrl.StartsWith("fact") ? "active" : "")">
+                        <a class="nav-link px-3 pt-0" href="/fact/f"><i class="fa-solid fa-table-columns text-secondary"></i> FACT</a>
+                    </li>
+                    
+                    <li class="nav-item mt-2 me-2">
+                        <a class="nav-link px-3 pt-0" href="/auth/logout"><i class="fa-solid fa-right-from-bracket text-secondary"></i> Log-out</a>
+                    </li>
+
+                   
+                </ul>
+
+
+        </div>
+
+
+
+    </div>
+</nav>
+
+</AuthorizeView>
+
+@code {
+
+    private ClaimsPrincipal User { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        getCurrentUrl(NavigationManager.Uri);
+        NavigationManager.LocationChanged += LocationChanged;
+
+        if (authenticationState is not null)
+        {
+            AuthenticationState authState = await authenticationState;
+            User = authState?.User;
+        }
+    }
+
+
+    private string currentUrl;    
+
+    private void getCurrentUrl(string location)
+    {
+        currentUrl = location.ToLower().Replace(NavigationManager.BaseUri.ToLower(), "");
+        StateHasChanged();
+    }
+
+    void LocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        getCurrentUrl(e.Location);
+    }
+
+    void IDisposable.Dispose()
+    {
+        NavigationManager.LocationChanged -= LocationChanged;
+    }
+}

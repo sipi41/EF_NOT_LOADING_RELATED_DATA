@@ -1,0 +1,1889 @@
+﻿@page "/fact/{GridType}"
+
+@using ITT_OneTeam.Identity;
+@using ITT_OneTeam.Models.FACT;
+@using ITT_OneTeam.ViewModels;
+@using System.Text.Json;
+
+@inject IConfiguration conf;
+@inject IJSRuntime js;
+@inject IDbContextFactory<TSMC_ODS_DbContext> odsContextFactory;
+@inject IWebHostEnvironment HostEnvironment;
+@inject ProtectedLocalStorage LocalStorage;
+@inject NavigationManager nm;
+@inject UserManager<AppIdentityUser> UserManager;
+
+@implements IAsyncDisposable;
+
+@attribute [Authorize(Roles = "Reader")]
+
+<div class="p-0 m-0" style="width:calc(100vw); height:calc(50vh);">
+
+    <SfGrid ID="FACTgrid" @ref="grid" TValue="FACT_Entry" DataSource="FACT" Width="100%" Height="100" class="table table-striped-custom GridSmallFS "
+            ShowColumnMenu="true" ColumnMenuItems="@MenuItems"
+            AllowTextWrap="true"
+            AllowFiltering="true"
+            AllowSorting="true"
+            AllowPaging="true"
+            AllowExcelExport="true"
+            AllowReordering="true"
+            GroupSettings="@gridGroupSettings"
+            AllowGrouping="@AllowGrouping">
+        <GridSelectionSettings Mode="Syncfusion.Blazor.Grids.SelectionMode.Both"></GridSelectionSettings>
+        <GridEvents 
+            CellSelecting="GRID_Cell_Selecting_Handler"
+                    TValue="FACT_Entry"></GridEvents>
+        <GridGroupSettings ShowGroupedColumn="true"></GridGroupSettings>
+        <GridTemplates Context="FactContext">
+            @*<DetailTemplate>
+            <div>my extra content here</div>
+            </DetailTemplate>*@
+        </GridTemplates>
+
+        <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel" Mode="FilterBarMode.Immediate" ShowFilterBarStatus="true"></GridFilterSettings>
+        <GridColumns>
+
+            <!-- FROZEN COLUMNS -->
+
+            <GridColumn Field="@nameof(FACT_Entry.tool_name)" IsFrozen="@(FrozenFields.ContainsKey(nameof(FACT_Entry.tool_name)))" Width="70" AllowFiltering="true">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Tool</div>
+                        <div>Name</div>
+                    </div>
+                </HeaderTemplate>
+                <Template>
+                    @{
+                        FACT_Entry ctx = (FACT_Entry)context;
+                    }
+                    <div class="bg-primary text-white text-center">@ctx.tool_name</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.tool_move_in_date)" IsFrozen="@(FrozenFields.ContainsKey(nameof(FACT_Entry.tool_move_in_date)))" Type="ColumnType.Date" Format="M/d/yyyy" Width="80" MaxWidth="80" TextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Tool</div>
+                        <div>Move-in</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.location)" IsFrozen="@(FrozenFields.ContainsKey(nameof(FACT_Entry.location)))" Width="110" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Location</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.fa_sort)" IsFrozen="@(FrozenFields.ContainsKey(nameof(FACT_Entry.fa_sort)))" Width="50" HeaderTextAlign="TextAlign.Center" TextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>FA</div>
+                        <div>Sort</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.fa_sort</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.first_pre_hu)" IsFrozen="@(FrozenFields.ContainsKey(nameof(FACT_Entry.first_pre_hu)))" Width="55" HeaderTextAlign="TextAlign.Center" TextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>First</div>
+                        <div>PreHU</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.first_pre_hu</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.itt_fa_pm)" IsFrozen="@(FrozenFields.ContainsKey(nameof(FACT_Entry.itt_fa_pm)))" AutoFit="true" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>ITT FA PM</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.phase)" IsFrozen="@(FrozenFields.ContainsKey(nameof(FACT_Entry.phase)))" Width="60" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div class="">Phase</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.floor)" IsFrozen="@(FrozenFields.ContainsKey(nameof(FACT_Entry.floor)))" Width="50" HeaderTextAlign="TextAlign.Center" TextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Floor</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.mod_vs_nonmod)" IsFrozen="@(FrozenFields.ContainsKey(nameof(FACT_Entry.mod_vs_nonmod)))" Width="65" HeaderTextAlign="TextAlign.Center" TextAlign="TextAlign.Center" Context="ColumnContext">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>MOD</div>
+                        <div>vs.</div>
+                        <div style="font-size:x-small !important;">Non-MOD</div>
+                    </div>
+                </HeaderTemplate>
+                <Template>
+                    @{
+                        FACT_Entry context = (FACT_Entry)ColumnContext;
+                    }
+                    <div>
+                        <input type="checkbox" checked="@(context.mod_vs_nonmod == "Mod")" onclick="return false;" />
+                    </div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.functional_area)" IsFrozen="@(FrozenFields.ContainsKey(nameof(FACT_Entry.functional_area)))" Width="65" MaxWidth="65" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div style="font-size:xx-small !important;">Functional</div>
+                        <div>Area</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.prehu_finish_total_float)" IsFrozen="@(FrozenFields.ContainsKey(nameof(FACT_Entry.prehu_finish_total_float)))" Width="60">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>PreHU</div>
+                        <div>Finish</div>
+                        <div>Total</div>
+                        <div>Float</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.prehu_finish_total_float</div>
+                </Template>
+            </GridColumn>
+
+            <!-- REGULAR COLUMNS -->
+
+            <GridColumn Field="@nameof(FACT_Entry.scope)" Width="50" HeaderTextAlign="TextAlign.Center" TextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Scope</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.event_type)" Width="70" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Event</div>
+                        <div>Type</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry._3D_Stage_2_Finish)" Width="70" Type="ColumnType.Date" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>3D</div>
+                        <div>Stage</div>
+                        <div>2 Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context._3D_Stage_2_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry._3D_Stage_2_Finish_Actual)" Width="70" Type="ColumnType.Date" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>3D</div>
+                        <div>Stage</div>
+                        <div>2 Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context._3D_Stage_2_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry._2D_Layout_Finish)" Width="70" Type="ColumnType.Date" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>2D</div>
+                        <div>Layout</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context._2D_Layout_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry._2D_Layout_Finish_Actual)" Width="70" Type="ColumnType.Date" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>2D</div>
+                        <div>Layout</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context._3D_Stage_2_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.Datum_Finish)" Width="70" Type="ColumnType.String" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Datum</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Datum_Finish_Actual)" Width="70" Type="ColumnType.String" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Datum</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Core_Drill_Finish)" Width="70" Type="ColumnType.String" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Core</div>
+                        <div>Drill</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Core_Drill_Finish_Actual)" Width="70" Type="ColumnType.String" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Core</div>
+                        <div>Drill</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.BOM_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>BOM</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.BOM_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.BOM_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>BOM</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.BOM_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Design_Start)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Design</div>
+                        <div>Start</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Design_Start?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Design_Start_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Design</div>
+                        <div>Start</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Design_Start_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.IFC_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>IFC</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.IFC_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.IFC_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>IFC</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.IFC_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.PHU_Survey_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>PHU</div>
+                        <div>Survey</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.PHU_Survey_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.PHU_Survey_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>PHU</div>
+                        <div>Survey</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.PHU_Survey_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.Foundation_Set_Start)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div style="font-size:x-small !important;">Foundation</div>
+                        <div>Set</div>
+                        <div>Start</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Foundation_Set_Start?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Foundation_Set_Start_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div style="font-size:x-small !important;">Foundation</div>
+                        <div>Set</div>
+                        <div>Start</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Foundation_Set_Start_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Foundation_Set_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div style="font-size:x-small !important;">Foundation</div>
+                        <div>Set</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Foundation_Set_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Foundation_Set_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div style="font-size:x-small !important;">Foundation</div>
+                        <div>Set</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Foundation_Set_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.Material_DD_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Material</div>
+                        <div>DD</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Material_DD_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Material_DD_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Material</div>
+                        <div>DD</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Material_DD_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.Pre_Hookup_Start)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Pre</div>
+                        <div>Hookup</div>
+                        <div>Start</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Pre_Hookup_Start?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Pre_Hookup_Start_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Pre</div>
+                        <div>Hookup</div>
+                        <div>Start</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Pre_Hookup_Start_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Pre_Hookup_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Pre</div>
+                        <div>Hookup</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Pre_Hookup_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Pre_Hookup_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Pre</div>
+                        <div>Hookup</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Pre_Hookup_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.Move_InStart)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Move-in</div>
+                        <div>Start</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Move_InStart?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.Move_InStart_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Move-in</div>
+                        <div>Start</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.Move_InStart_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.DockingStart)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Docking</div>
+                        <div>Start</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.DockingStart?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.DockingStart_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Docking</div>
+                        <div>Start</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.DockingStart_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.DockingFinish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Docking</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.DockingFinish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.DockingFinish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>Docking</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.DockingFinish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.HU_Survey_WalkFinish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>HU Survey</div>
+                        <div>Walk</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.HU_Survey_WalkFinish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.HU_Survey_WalkFinish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>HU Survey</div>
+                        <div>Walk</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.HU_Survey_WalkFinish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.T0_Hookup_Start)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0</div>
+                        <div>Hookup</div>
+                        <div>Start</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_Hookup_Start?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T0_Hookup_Start_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0</div>
+                        <div>Hookup</div>
+                        <div>Start</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_Hookup_Start_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T0_Hookup_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0</div>
+                        <div>Hookup</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_Hookup_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T0_Hookup_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0</div>
+                        <div>Hookup</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_Hookup_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.T0_T_S_Start)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0</div>
+                        <div>T/S</div>
+                        <div>Start</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_T_S_Start?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T0_T_S_Start_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0</div>
+                        <div>T/S</div>
+                        <div>Start</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_T_S_Start_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T0_T_S_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0</div>
+                        <div>T/S</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_T_S_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T0_T_S_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0</div>
+                        <div>T/S</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_T_S_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.T0_UTO_Start)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0 UTO</div>
+                        <div>Start</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_UTO_Start?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T0_UTO_Start_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0 UTO</div>
+                        <div>Start</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_UTO_Start_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T0_UTO_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0 UTO</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_UTO_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T0_UTO_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T0 UTO</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T0_UTO_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.T1_Hookup_Start)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 Hookup</div>
+                        <div>Start</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_Hookup_Start?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T1_Hookup_Start_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 Hookup</div>
+                        <div>Start</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_Hookup_Start_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T1_Hookup_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 Hookup</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_Hookup_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T1_Hookup_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 Hookup</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_Hookup_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.T1_T_S_Start)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 T/S</div>
+                        <div>Start</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_T_S_Start?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T1_T_S_Start_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 T/S</div>
+                        <div>Start</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_T_S_Start_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T1_T_S_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 T/S</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_T_S_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T1_T_S_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 T/S</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_T_S_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(FACT_Entry.T1_UTO_Start)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 UTO</div>
+                        <div>Start</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_UTO_Start?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T1_UTO_Start_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 UTO</div>
+                        <div>Start</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_UTO_Start_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T1_UTO_Finish)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 UTO</div>
+                        <div>Finish</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_UTO_Finish?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+            <GridColumn Field="@nameof(FACT_Entry.T1_UTO_Finish_Actual)" Width="70" Type="ColumnType.DateOnly" Format="M/d/yyyy" HeaderTextAlign="TextAlign.Center">
+                <HeaderTemplate>
+                    <div class="CustomHeaderMainDiv">
+                        <div>T1 UTO</div>
+                        <div>Finish</div>
+                        <div>Actual</div>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="FactEntryContext">
+                    @{
+                        FACT_Entry context = (FACT_Entry)FactEntryContext;
+                    }
+                    <div class="text-end">@context.T1_UTO_Finish_Actual?.ToString("M/d/yyyy")</div>
+                </Template>
+            </GridColumn>
+
+
+        </GridColumns>
+    </SfGrid>
+
+    <div class="bg-primary text-white p-3">
+
+        <h5>Test Load Data</h5>
+
+        <div>
+            In the grid (on top) with 1 records, you can click the blue cell at top left and will open a modal with comments, you will see that we would like to display the
+            name of the user who posted the comment
+        </div>
+
+        <div class="mt-2">
+            The following <button @onclick="GETMYDATA" class="btn btn-warning btn-sm">CLICK ME</button> button will run the method GETMYDATA() that will try to get the related data using EF,
+            then will send the result object to JavaScript Console (please open your console), after expanding the results, you will notice that it return the list of comments but <b>user is null</b> as if it could not find data, but I did check into
+            the query used by EF and it returns data, just EF is not using it. Below an example of the problem.
+        </div>
+
+        <div>
+            <img src="data:image/png;base64,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">
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<SfSpinner @bind-Visible="@ShowSpinner" Label="Please wait..." Type="SpinnerType.Bootstrap5"></SfSpinner>
+
+@* --------- Tool Modal ------------ *@
+
+<SfDialog @ref="Tool_Modal" CssClass="Tool_Modal" ShowCloseIcon="true" IsModal="true" CloseOnEscape="true" @bind-Visible="@ShowFactModal">
+    <DialogTemplates>
+        <Header>
+            <div class="row">
+                <div class="col">
+                    <h3 class="text-primary my-0 py-0" style="font-size:1.75rem !important;">@Editable_FACT.tool_name</h3>
+                </div>
+                <div class="col-7">
+                    <div class="text-end">
+                        <h4 class="fw-light  my-0 py-0" style="font-size:1.5rem !important;">PM: <b style="font-size:1.5rem !important;">@Editable_FACT.itt_fa_pm</b></h4>
+                    </div>
+                </div>
+            </div>
+
+        </Header>
+        <Content>
+
+            <div class="row">
+                <div class="col">
+
+                    <SfTab>
+                        <TabItems>
+                            <TabItem>
+                                <HeaderTemplate>
+                                    <div>Pre-Construction</div>
+                                </HeaderTemplate>
+                                <ContentTemplate>
+                                    <div class="p-3 text-end text-danger">
+                                        COMMENTS ON THE RIGHT =>
+
+                                    </div>
+                                </ContentTemplate>
+
+                            </TabItem>
+                            <TabItem>
+                                <HeaderTemplate>
+                                    <div>D.P./BOM</div>
+                                </HeaderTemplate>
+                                <ContentTemplate>
+                                    <div>Hola </div>
+                                </ContentTemplate>
+                            </TabItem>
+                            <TabItem>
+                                <HeaderTemplate>
+                                    <div>Construction</div>
+                                </HeaderTemplate>
+                                <ContentTemplate>
+                                    <div>Hola </div>
+                                </ContentTemplate>
+                            </TabItem>
+                        </TabItems>
+                    </SfTab>
+
+                </div>
+                <div class="col-5">
+
+                    <SfTab>
+                        <TabItems>
+                            <TabItem>
+                                <HeaderTemplate>
+                                    <div>Comments <b>(@Editable_FACT.comments.Count)</b></div>
+                                </HeaderTemplate>
+                                <ContentTemplate>
+                                    <div class="">
+                                        @* ----------- Comments ----------- *@
+                                        <SfGrid GridLines="GridLine.Both" TValue="FactComment" Height="250"
+                                                DataSource="@Editable_FACT.comments.OrderByDescending(o => o.created_date).ToList()" class="CommentsTable table-striped-custom"
+                                                AllowTextWrap="true">
+                                            <GridTextWrapSettings WrapMode="WrapMode.Content"></GridTextWrapSettings>
+                                            <GridColumns>
+                                                <GridColumn Field="@nameof(FactComment.created_by)" Width="22%" HeaderTextAlign="TextAlign.Center" HeaderText="Created By">
+                                                    <Template>
+                                                        @{
+                                                            FactComment comment = (FactComment)context;
+
+                                                            string CommentCreatedBy = string.Empty;
+
+                                                            //CommentCreatedBy = comment.User.UserName;
+
+                                                            if (Guid.Parse(comment.created_by) == userId)
+                                                            {
+                                                                CommentCreatedBy = user.Identity.Name;
+                                                            } else
+                                                            {
+
+                                                                using TSMC_ODS_DbContext db = odsContextFactory.CreateDbContext();
+
+
+                                                                CommentCreatedBy = db.Users.First(f => f.Id == comment.created_by).UserName;
+
+                                                                    
+                                                                
+
+                                                            }
+                                                           
+                                                        }
+                                                        <div class="lh-sm FontSmaller">
+                                                            <div>@CommentCreatedBy</div>
+                                                            <div class="text-muted">@comment.created_date.ToString("M/d/yyy @ htt")</div>
+                                                        </div>
+                                                    </Template>
+                                                </GridColumn>
+                                                <GridColumn Field="@nameof(FactComment.Comment)" HeaderTextAlign="TextAlign.Center">
+                                                    <Template>
+                                                        @{
+                                                            FactComment comment = (FactComment)context;
+                                                        }
+                                                        <div class="lh-sm FontSmall">@comment.Comment</div>
+                                                    </Template>
+                                                </GridColumn>
+                                                <GridColumn Width="35">
+                                                    <Template>
+                                                        @{
+                                                            FactComment comment = (FactComment)context;
+                                                        }
+                                                        <div class="text-center">
+                                                            <button @onclick="@(_ => DeleteComment(comment.comment_guid))" class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i></button>
+
+                                                        </div>
+
+                                                    </Template>
+                                                </GridColumn>
+                                            </GridColumns>
+                                        </SfGrid>
+
+                                        @* --------- Add New Comment --------- *@
+
+                                        <EditForm class="mt-2" Model="NewCommentModel" OnValidSubmit="AddNewComment">
+                                            <DataAnnotationsValidator></DataAnnotationsValidator>
+                                            <div>
+                                                <label class="fw-bold" for="NewComentContent">Create New Comment</label>
+                                                <InputTextArea id="NewComentContent" @bind-Value="@NewCommentModel.Comment" class="form-control"></InputTextArea>
+                                                <ValidationMessage For="@(() => @NewCommentModel.Comment)"></ValidationMessage>
+                                            </div>
+                                            <div class="mt-1">
+                                                <button class="btn btn-primary btn-sm"><i class="fa-solid fa-floppy-disk"></i> Save Comment</button>
+                                            </div>
+                                        </EditForm>
+
+                                    </div>
+                                </ContentTemplate>
+
+                            </TabItem>
+                            <TabItem>
+                                <HeaderTemplate>
+                                    <div>Constraints <b>(25)</b></div>
+                                </HeaderTemplate>
+                                <ContentTemplate>
+                                    <div>Hola </div>
+                                </ContentTemplate>
+                            </TabItem>
+                            <TabItem>
+                                <HeaderTemplate>
+                                    <div>Variances <b>(25)</b></div>
+                                </HeaderTemplate>
+                                <ContentTemplate>
+                                    <div>Hola </div>
+                                </ContentTemplate>
+                            </TabItem>
+                        </TabItems>
+                    </SfTab>
+
+                </div>
+            </div>
+
+        </Content>
+    </DialogTemplates>
+    <DialogAnimationSettings Effect="DialogEffect.FadeZoom" Duration=400 />
+    <DialogEvents></DialogEvents>
+</SfDialog>
+
+@code {
+
+    private async Task GETMYDATA()
+    {
+        await js.InvokeVoidAsync("console.clear");
+
+        using TSMC_ODS_DbContext db = await odsContextFactory.CreateDbContextAsync();
+
+        //EAGER LOADING EXAMPLE 
+
+        Editable_FACT = db.FACT
+                            .Include(FACT => FACT.comments)
+                            .ThenInclude(comment => comment.User)                                
+                            .First(f => f.tool_name == "KEMGH5");
+
+        await js.InvokeVoidAsync("console.log", "EAGER LOADING", Editable_FACT);
+
+        //EXPLICIT LOADING (SAME RESULT)
+
+        Editable_FACT = await db.FACT.FirstOrDefaultAsync(f => f.tool_name == "KEMGH5");
+
+        await db.Entry<FACT_Entry>(Editable_FACT)
+            .Collection(b => b.comments)
+            .LoadAsync();
+
+        foreach (var item in Editable_FACT.comments)
+        {
+            await db.Entry<FactComment>(item)
+            .Reference(r => r.User)
+            .LoadAsync();
+        }
+
+        await js.InvokeVoidAsync("console.log", "EXPLICIT LOADING", Editable_FACT);
+    }
+
+
+
+
+
+    [Parameter]
+    public string GridType { get; set; }
+
+    #region Tool Modal
+
+    private SfDialog Tool_Modal { get; set; }    
+
+    private bool ShowFactModal = false;
+
+    private FACT_Entry Editable_FACT { get; set; } = new();
+
+    private Dictionary<string, SfDatePicker<DateTime?>> DatePickers { get; set; } = new();
+
+    #region Pre-Construction
+
+    #endregion
+
+    #region Comments
+
+    private FactComment NewCommentModel { get; set; } = new();
+
+    private async Task AddNewComment()
+    {
+        NewCommentModel.created_by = userId.ToString();
+        NewCommentModel.tool_guid = Editable_FACT.tool_guid;
+
+        using TSMC_ODS_DbContext db = await odsContextFactory.CreateDbContextAsync();
+
+        await db.FACTComments.AddAsync(NewCommentModel);
+
+        await db.SaveChangesAsync();
+
+        Editable_FACT.comments.Add(NewCommentModel);
+
+
+        NewCommentModel = new();
+
+    }
+
+    private async Task DeleteComment(Guid CommentId)
+    {
+
+        using TSMC_ODS_DbContext db = await odsContextFactory.CreateDbContextAsync();
+
+        FactComment comment = await db.FACTComments.FirstAsync(f => f.comment_guid == CommentId);
+
+        if (comment != null)
+        {
+            Editable_FACT.comments.Remove(comment); //remove from local list...
+
+            db.Remove(comment); //remove from db...
+            await db.SaveChangesAsync();
+        }
+
+        // = await db.FACTComments.ToListAsync();
+
+    }
+
+    #endregion
+
+    #endregion
+
+    #region Freezing Columns
+
+    private Dictionary<string, bool> FrozenFields { get; set; } = new();
+
+    private List<string> FieldsToFreeze { get; set; } = new()
+    {
+        nameof(FACT_Entry.tool_name),
+        nameof(FACT_Entry.tool_move_in_date),
+        nameof(FACT_Entry.location),
+        nameof(FACT_Entry.fa_sort),
+        nameof(FACT_Entry.first_pre_hu),
+        nameof(FACT_Entry.itt_fa_pm),
+        nameof(FACT_Entry.phase),
+        nameof(FACT_Entry.floor),
+        nameof(FACT_Entry.mod_vs_nonmod),
+        nameof(FACT_Entry.functional_area),
+        nameof(FACT_Entry.prehu_finish_total_float),
+    };
+
+    private async Task FreezeColumns()
+    {
+        List<GridColumn> columns = await grid.GetColumnsAsync();
+
+        foreach (GridColumn column in columns)
+        {
+            if (FieldsToFreeze.Contains(column.Field))
+            {
+                column.IsFrozen = true;
+                if (FrozenFields.ContainsKey(column.Field) == false) FrozenFields.Add(column.Field, true);
+                else FrozenFields[column.Field] = true;
+            }
+        }
+    }
+
+    #endregion
+
+    #region Excel Export
+
+    private async Task ExportToExcel()
+    {
+        ExcelExportProperties ExportProperties = new ExcelExportProperties();
+
+        ExportProperties.ExportType = ExportType.AllPages;
+        ExportProperties.IncludeTemplateColumn = true;
+        ExportProperties.IncludeHeaderRow = true;
+
+        await grid.ExportToExcelAsync(ExportProperties);
+    }
+
+    #endregion
+
+    #region Side Menu
+
+    private async Task ActionsWhenOpeningSideToolbox()
+    {
+
+
+
+    }
+
+    private async Task ShowSideMenu()
+    {
+        await FactFunctions.InvokeVoidAsync("FactFunctions.ShowOffCanvasMenu");
+    }
+
+    private async Task HideSideMenu()
+    {
+        await FactFunctions.InvokeVoidAsync("FactFunctions.HideOffCanvasMenu");
+    }
+
+    #endregion
+
+    #region Toolbox Tabs
+
+    private SfTab ToolboxTabs { get; set; }
+
+    private async Task ToolboxTabs_SelectingHandler(SelectingEventArgs args)
+    {
+        if (args.SelectingIndex == 1) // Views Tab (index 1)
+        {
+            if (AvailableViews.Count == 0)
+            {
+                await GetViewsFromLocalStorage();
+            }
+
+        }
+
+    }
+
+    #endregion
+
+    #region Grid Views
+
+    private List<ViewStateEntry> AvailableViews { get; set; } = new();
+
+    private async Task ExistingView_OnValueSelect(SelectEventArgs<string> args, ViewStateEntry stateEntry)
+    {
+        if (args.ItemData == "Delete")
+        {
+            bool confirmation = await JsHelpers.InvokeAsync<bool>("Helpers.Confirm", "Delete the selected View?", $"Please confirm you want to delete the view: \"{stateEntry.FriendlyName}\"", "warning", "Yes, delete!", "red");
+
+            if (confirmation)
+            {
+
+                ViewStateEntry view = AvailableViews.FirstOrDefault(f => f.FriendlyName == stateEntry.FriendlyName);
+
+                if (view != null)
+                {
+
+                    //delete the data...
+
+                    await LocalStorage.DeleteAsync($"Persist Data: {saveView.ViewName}");
+
+                    await LocalStorage.DeleteAsync($"Group Settings: {saveView.ViewName}");
+
+                    //success msg to UI...
+
+                    await JsHelpers.InvokeVoidAsync("Helpers.ShowToast", $"View Removed", $"The view: \"{stateEntry.FriendlyName}\" has been removed.");
+
+                    //delete the item from local list... and update the browser storage
+
+                    AvailableViews.Remove(view);
+
+                    await LocalStorage.SetAsync("FACT Views", AvailableViews);
+
+                }
+
+            }
+
+            args.Cancel = true;
+        }
+
+        if (args.ItemData == "Set as default")
+        {
+            ViewStateEntry view = AvailableViews.FirstOrDefault(f => f.FriendlyName == stateEntry.FriendlyName);
+
+            if (view != null)
+            {
+                //remove default from other views...
+
+                AvailableViews.Where(w => w.FriendlyName != stateEntry.FriendlyName && w.GridType == GridType).ToList().ForEach(f => f.IsDefault = false);
+
+                //change this item value...
+
+                view.IsDefault = true;
+
+                //update the list in storage...
+
+                await LocalStorage.SetAsync("FACT Views", AvailableViews);
+
+                //success msg to UI...
+
+                await JsHelpers.InvokeVoidAsync("Helpers.ShowToast", $"Status Applied", $"The view: \"{stateEntry.FriendlyName}\" has been marked as \"default\" for this mode.");
+
+            }
+
+            args.Cancel = true;
+
+        }
+
+        if (args.ItemData == "Update")
+        {
+            bool confirmation = await JsHelpers.InvokeAsync<bool>("Helpers.Confirm", "Replace the selected View?", $"Please confirm you want to replace the view: \"{stateEntry.FriendlyName}\" with the current state", "warning", "Yes, update!");
+
+            if (confirmation)
+            {
+                ViewStateEntry view = AvailableViews.FirstOrDefault(f => f.FriendlyName == stateEntry.FriendlyName);
+
+                if (view != null)
+                {
+                    string CurrentViewData = await grid.GetPersistDataAsync();
+                    GridGroupSettings GroupSettings = grid.GroupSettings;
+
+                    await LocalStorage.SetAsync($"Persist Data: {saveView.ViewName}", CurrentViewData);
+                    await LocalStorage.SetAsync($"Group Settings: {saveView.ViewName}", GroupSettings);
+
+                    //success message to UI...
+
+                    await JsHelpers.InvokeVoidAsync("Helpers.ShowToast", $"View Updated", $"The view: \"{stateEntry.FriendlyName}\" has been updated with the current data.");
+
+                }
+            }
+
+            args.Cancel = true;
+
+        }
+
+        if (args.ItemData == "Apply")
+        {
+            bool applyResult = await ApplyView(stateEntry.FriendlyName);
+
+            if (applyResult)
+            {
+                await JsHelpers.InvokeVoidAsync("Helpers.ShowToast", $"View Applied", $"View \"{stateEntry.FriendlyName}\" has been successfully applied!");
+                await HideSideMenu();
+            }
+
+            args.Cancel = true;
+
+        }
+    }
+
+    private async Task<bool> ApplyView(string ViewName)
+    {
+        bool AppliedSuccessfuly = false;
+
+        ViewStateEntry view = AvailableViews.FirstOrDefault(f => f.FriendlyName == ViewName);
+
+        if (view != null)
+        {
+            ProtectedBrowserStorageResult<string> persistDataResult = await LocalStorage.GetAsync<string>($"Persist Data: {ViewName}");
+
+            if (persistDataResult.Success)
+            {
+                //apply the view...
+
+                await grid.SetPersistDataAsync(persistDataResult.Value);
+
+                //get the group settings...
+
+                ProtectedBrowserStorageResult<GridGroupSettings> groupSettingsResult = await LocalStorage.GetAsync<GridGroupSettings>($"Group Settings: {ViewName}");
+
+                if (groupSettingsResult.Success)
+                {
+                    gridGroupSettings = groupSettingsResult.Value;
+
+                    AppliedSuccessfuly = true;
+
+                }
+
+            }
+
+        }
+
+        return AppliedSuccessfuly;
+
+    }
+
+    private async Task GetViewsFromLocalStorage() //all views, frozen and grouped (filtered on UI)
+    {
+        try
+        {
+            ProtectedBrowserStorageResult<List<ViewStateEntry>> ViewsInLocalStorage = await LocalStorage.GetAsync<List<ViewStateEntry>>("FACT Views");
+
+            if (ViewsInLocalStorage.Success)
+            {
+                if (ViewsInLocalStorage.Value != null && ViewsInLocalStorage.Value.Any()) AvailableViews = ViewsInLocalStorage.Value;
+            }
+        }
+        catch (Exception Ex)
+        {
+            await js.InvokeVoidAsync("console.log", Ex.Message);
+            throw new Exception("Browser storage error - check"); //check builder.Services.AddSignalR
+        }
+
+    }
+
+    private SaveView saveView { get; set; } = new();
+
+    private async Task SaveCurrentView()
+    {
+        //add item to list... (without the data)
+
+        ViewStateEntry newViewData = new ViewStateEntry
+            {
+                FriendlyName = saveView.ViewName,
+                GridType = GridType,
+                IsDefault = false,
+            };
+
+        AvailableViews.Add(newViewData);
+
+        await LocalStorage.SetAsync("FACT Views", AvailableViews);
+
+        //add the data (persist and grouping)
+
+        string CurrentViewData = await grid.GetPersistDataAsync();
+        GridGroupSettings GroupSettings = grid.GroupSettings;
+
+        await LocalStorage.SetAsync($"Persist Data: {saveView.ViewName}", CurrentViewData);
+        await LocalStorage.SetAsync($"Group Settings: {saveView.ViewName}", GroupSettings);        
+
+        //success message to UI...
+
+        await JsHelpers.InvokeVoidAsync("Helpers.ShowToast", $"View Created", $"The view: \"{saveView.ViewName}\" has been created for the current mode.");
+
+        //reset the model...
+
+        saveView = new();
+
+    }
+
+    private async Task DefaultViewApplyIfAny()
+    {
+        await GetViewsFromLocalStorage();
+
+        ViewStateEntry defaultView = AvailableViews.FirstOrDefault(f => f.IsDefault && f.GridType == GridType);
+
+        if (defaultView != null)
+        {
+            bool requestSucceded = await ApplyView(defaultView.FriendlyName);
+
+            if (requestSucceded)
+            {
+                await JsHelpers.InvokeVoidAsync("Helpers.ShowToast", $"Default View Applied", $"The default View \"{defaultView.FriendlyName}\" has been successfully applied.");
+            }
+        }
+    }
+
+    private async Task RemoveDefault(ViewStateEntry stateEntry)
+    {
+        bool confirmation = await JsHelpers.InvokeAsync<bool>("Helpers.Confirm", "Remove Default View?", $"If confirmed, this view will not be loaded when page loads. (a refresh will be made)", "warning", "Yes, unset!", "orange");
+
+        if (confirmation)
+        {
+            ViewStateEntry view = AvailableViews.FirstOrDefault(f => f.FriendlyName == stateEntry.FriendlyName);
+
+            if (view != null)
+            {
+                //remove default from views...
+
+                AvailableViews.Where(w => w.GridType == GridType).ToList().ForEach(f => f.IsDefault = false);
+
+                //update the list in storage...
+
+                await LocalStorage.SetAsync("FACT Views", AvailableViews);
+
+                //success msg to UI...
+
+                await JsHelpers.InvokeVoidAsync("Helpers.ShowToast", $"Default View", $"The view: \"{stateEntry.FriendlyName}\" has been de-selected as as \"default\" for this mode.");
+
+            }
+
+            await Task.Delay(3000);
+            await js.InvokeVoidAsync("document.location.reload");
+        }
+    }
+
+    #endregion
+
+    #region Grid Mode
+
+    private bool AllowGrouping { get; set; }
+
+    private async Task GridModeChanged(Microsoft.AspNetCore.Components.ChangeEventArgs args)
+    {
+        if (args.Value.ToString() == "g")
+        {
+            nm.NavigateTo("/fact/g", true);
+        }
+        if (args.Value.ToString() == "f")
+        {
+            nm.NavigateTo("/fact/f", true);
+        }
+    }
+
+    private async Task SetViewToFrozenColumns()
+    {
+        AllowGrouping = false;
+        await FreezeColumns();
+
+    }
+
+    private async Task SetViewToGroupingColumns()
+    {
+        AllowGrouping = true;
+    }
+
+    #endregion
+
+    #region general
+
+    private IJSObjectReference JsHelpers { get; set; }
+    private IJSObjectReference FactFunctions { get; set; }
+
+    private bool ShowSpinner { get; set; } = true;
+
+    #endregion
+
+    #region Grid
+
+    private int PageSize { get; set; }
+
+    private GridGroupSettings gridGroupSettings = new();
+
+    private string[] MenuItems = new string[] { "SortAscending", "SortDescending", "ColumnChooser", "Filter" };
+
+    private SfGrid<FACT_Entry> grid { get; set; }
+
+    private List<FACT_Entry> FACT { get; set; } = new();
+
+    private async Task GRID_Cell_Selecting_Handler(CellSelectingEventArgs<FACT_Entry> args)
+    {
+
+        GridColumn column = grid.Columns[args.CellIndex];
+
+        if (column.Field == nameof(FACT_Entry.tool_name))
+        {
+            using TSMC_ODS_DbContext db = await odsContextFactory.CreateDbContextAsync();
+
+            Editable_FACT = await db.FACT
+                                .Include(FACT => FACT.comments)
+                                .ThenInclude(comment => comment.User)                                
+                                .FirstOrDefaultAsync(f => f.tool_name == args.Data.tool_name)
+                                ;
+
+            //Editable_FACT = await db.FACT.FirstOrDefaultAsync(f => f.tool_name == args.Data.tool_name);
+
+            //await db.Entry<FACT_Entry>(Editable_FACT)
+            //    .Collection(b => b.comments)
+            //    .LoadAsync();
+
+            //foreach (var item in Editable_FACT.comments)
+            //{
+            //    await db.Entry<FactComment>(item)
+            //    .Reference(r => r.User)
+            //    .LoadAsync();
+            //}
+
+            await js.InvokeVoidAsync("console.log", Editable_FACT);
+
+            ShowFactModal = true;
+
+        }
+    }
+
+
+
+    #endregion
+
+    #region Grid Pagination
+
+    private async Task LoadPageSize()
+    {
+        ProtectedBrowserStorageResult<int> queryResult = await LocalStorage.GetAsync<int>("PageSize");
+
+        if (queryResult.Success) PageSize = queryResult.Value;
+        else PageSize = Convert.ToInt16(conf["Fact_Grid_Defaults:PageSize"]);
+
+    }
+
+    private async Task SavePageSize(Microsoft.AspNetCore.Components.ChangeEventArgs args)
+    {
+        await LocalStorage.SetAsync("PageSize", int.Parse(args.Value.ToString()));
+
+    }
+
+    private async Task GoToPage(int PageToGo)
+    {
+        await grid.GoToPageAsync(PageToGo);
+    }
+
+    #endregion
+
+    #region Page Initialization
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        #region Authentication / Authorization
+
+        if (authenticationState is not null)
+        {
+            authState = await authenticationState;
+            user = authState?.User;
+            userId = Guid.Parse(user.Claims.FirstOrDefault(f => f.Type == ClaimTypes.NameIdentifier).Value);
+        }
+
+        #endregion
+
+        GridType = GridType.ToLower();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            //javascript modules and initialization...
+
+            JsHelpers = await js.InvokeAsync<IJSObjectReference>("import", "/BlazorHelpers.js");
+            FactFunctions = await js.InvokeAsync<IJSObjectReference>("import", "/Pages/FACT/Fact.razor.js");
+
+            await JsHelpers.InvokeVoidAsync("Helpers.ImportCSS", $"/css/FACT.css?d={DateTime.Now.ToString("MdyyHm")}");
+
+            //defaults IF NO DEFAULT VIEW has been applied
+
+            await LoadPageSize();
+
+            if (GridType == "f")
+            {
+                await SetViewToFrozenColumns();
+
+            }
+            else if (GridType == "g")
+            {
+                await SetViewToGroupingColumns();
+            }
+
+            //await DefaultViewApplyIfAny();
+
+            //call data from db...
+
+            using TSMC_ODS_DbContext db = await odsContextFactory.CreateDbContextAsync();
+
+            FACT = await db.FACT.ToListAsync();
+
+            if (HostEnvironment.IsDevelopment() && int.TryParse(conf["FACT:MaxRecordsOnGrid"], out _)) //only for DEVELOPMENT
+            {
+                FACT = FACT.Take(575).ToList();
+            }
+
+            ShowSpinner = false;
+
+            StateHasChanged();
+
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (JsHelpers != null) await JsHelpers.DisposeAsync();
+        if (FactFunctions != null) await FactFunctions.DisposeAsync();
+        if (grid != null) grid.Dispose();
+    }
+
+    #endregion
+
+    #region Users / Authentication / Authorization
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+
+    private AuthenticationState authState { get; set; }
+    private ClaimsPrincipal user { get; set; }
+    private Guid userId { get; set; }
+
+    #endregion
+
+
+}

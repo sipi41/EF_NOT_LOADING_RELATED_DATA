@@ -1,0 +1,33 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+
+<CascadingAuthenticationState>
+
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>      
+                    
+                    <div class="col px-0 h-100 align-items-center justify-content-center d-flex bg-secondary ">
+
+                        <div class="p-3 m-3 alert alert-warning">
+                            <div class="h4 text-danger"><i class="fa-solid fa-circle-exclamation"></i> Not Authorized!</div>
+                            <div>You are not authorized to view this content, please contact the website administrator.</div>
+                            <div class="mt-3">Please <a href="/auth/login" class="btn btn-sm btn-primary">click <i class="fa-solid fa-key"></i> here</a> to access this content.</div>
+                        
+                        </div>
+
+                    </div>
+                    
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            @*<FocusOnNavigate RouteData="@routeData" Selector="h1" />*@
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p role="alert">Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+
+</CascadingAuthenticationState>

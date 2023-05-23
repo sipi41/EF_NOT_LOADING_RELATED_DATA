@@ -1,0 +1,163 @@
+﻿@page "/"
+
+
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using System.Security.Claims;
+
+@inject NavigationManager nm;
+
+@code {
+
+    private AuthenticationState authState { get; set; }
+    private ClaimsPrincipal user { get; set; }
+
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (authenticationState is not null)
+        {
+            authState = await authenticationState;
+            user = authState?.User;
+
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (authState != null)
+        {
+            if (user.Identity.IsAuthenticated == false)
+                nm.NavigateTo("/auth/login", forceLoad: true);
+            else
+            {
+                if ( user.HasClaim(m => m.Type == "Default URL") )
+                    nm.NavigateTo(uri: user.Claims.FirstOrDefault(f => f.Type == "Default URL").Value, forceLoad: true);
+                else nm.NavigateTo("/fact/f", forceLoad: true);
+            }
+        }
+    }
+}
+
+@*<h1>Cascade Auth State</h1>
+
+<p>@authMessage</p>
+
+<AuthorizeView>
+    <Authorized>
+    <p>Hello, @context.User.Identity.Name!</p>
+    </Authorized>
+    <NotAuthorized>
+        <div class="p-3 m-3 alert alert-danger">
+            <div class="h4"><i class="fa-solid fa-circle-exclamation"></i> Not Authorized</div>
+            <div>You are not authorized to view this content, please contact the website administrator.</div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@if (authState != null)
+{
+    <div>IsAuthenticated: @user.Identity.IsAuthenticated</div>
+    <div>@user.IsInRole("Administrator")</div>
+}
+
+
+@code {
+    private string authMessage = "The user is NOT authenticated.";
+
+    private AuthenticationState authState { get; set; }
+    private ClaimsPrincipal user { get; set; }
+
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (authenticationState is not null)
+        {
+            authState = await authenticationState;
+            user = authState?.User;
+
+            if (user?.Identity is not null && user.Identity.IsAuthenticated)
+            {
+                authMessage = $"{user.Identity.Name} is authenticated.";
+            }
+        }
+    }
+}*@
+
+
+
+
+
+
+@*@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="p-5">
+    <p>Sample Dashboard content</p>
+</div>
+
+<h1>ClaimsPrincipal Data</h1>
+
+<button @onclick="GetClaimsPrincipalData">Get ClaimsPrincipal Data</button>
+
+<p>@authMessage</p>
+
+@if (claims.Count() > 0)
+{
+    <ul>
+        @foreach (var claim in claims)
+        {
+            <li>@claim.Type: @claim.Value</li>
+        }
+    </ul>
+}
+
+<p>@surname</p>
+
+@if (authState != null)
+{
+    <div>IsAuthenticated: @user.Identity.IsAuthenticated</div>
+
+}
+
+@code {
+    private string? authMessage;
+    private string? surname;
+    private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+    private AuthenticationState authState { get; set; }
+    private ClaimsPrincipal user { get; set; }
+
+    private async Task GetClaimsPrincipalData()
+    {
+
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            authMessage = $"{user.Identity.Name} is authenticated.";
+            claims = user.Claims;
+            surname = user.FindFirst(c => c.Type == ClaimTypes.Surname)?.Value;
+        }
+        else
+        {
+            authMessage = "The user is NOT authenticated.";
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            user = authState.User;
+
+            StateHasChanged();
+        }
+    }
+
+}*@

@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "defaultDestination": "wwwroot/utilities/",
+  "libraries": [
+    {
+      "library": "bootstrap@5.2.3",
+      "destination": "wwwroot/utilities/bootstrap-5.2.3"
+    },
+    {
+      "library": "sweetalert2@11.7.3",
+      "destination": "wwwroot/utilities/sweetalert2-11.7.3"
+    },
+    {
+      "library": "font-awesome@6.4.0",
+      "destination": "wwwroot/utilities/font-awesome-6.4.0"
+    }
+  ]
+}

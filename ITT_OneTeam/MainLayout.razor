@@ -1,0 +1,27 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
+
+<AuthorizeView>
+    <Authorized>
+
+        <div class="container-fluid h-100">
+            <div class="row" style="height:60px !important;">
+                <div class="col-12 p-0">
+                    <ITT_OneTeam.Pages.Shared.TopNavBar></ITT_OneTeam.Pages.Shared.TopNavBar>
+                </div>
+            </div>
+            <div class="row" style="height:calc(100% - 60px) !important;">
+                <div class="col px-0 h-100">
+
+                    @Body
+
+                </div>
+            </div>
+        </div>
+
+    </Authorized>
+    <NotAuthorized>
+        @Body
+    </NotAuthorized>
+
+</AuthorizeView>

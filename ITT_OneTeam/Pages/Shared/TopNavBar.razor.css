@@ -1,0 +1,17 @@
+﻿.nav-link{
+    font-size:1.2rem !important;
+    font-weight:lighter;
+    color:white;
+}
+
+    .nav-link.active {
+        color: white;
+    }
+
+    .nav-link:hover {
+        text-shadow:1pt 1pt 2pt white;
+    }
+
+    .nav-item.active {
+        border-top: 1px solid red;
+    }

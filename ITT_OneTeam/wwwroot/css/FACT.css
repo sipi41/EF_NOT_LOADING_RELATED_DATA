@@ -1,0 +1,33 @@
+﻿/* Scrolling Bars */
+
+body {
+    overflow: hidden; /* Hide scrollbars */
+}
+
+::-webkit-scrollbar {
+    height: 12px;
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+ /* Tool Dialog */  
+ 
+ .Tool_Modal .e-dlg-header-content {
+    padding: 5pt !important;
+}
+
+.Tool_Modal .e-dialog{
+    width:90% !important;
+    min-width:1250px !important;
+}

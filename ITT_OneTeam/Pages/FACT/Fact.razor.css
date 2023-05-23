@@ -1,0 +1,113 @@
+﻿::deep .e-grid .e-columnheader .e-headercell.textorientationclass .e-headercelldiv {
+    /*transform: rotate(-90deg);*/
+}
+
+::deep .e-headercell {
+    vertical-align: bottom !important;
+}
+
+::deep #FACTgrid .e-headercelldiv {
+    font-size: smaller !important;
+    padding-left: 0px !important;
+    min-width: 60px !important;
+}
+
+::deep #FACTgrid .e-rowcell {
+    font-size: smaller !important;
+    padding: 2pt !important;
+    /*border:1px solid gray !important;*/
+}
+
+::deep .e-frozenheader {
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+}
+
+::deep .e-movableheader {
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+}
+
+::deep #FACTgrid .CustomHeaderMainDiv {
+    line-height: 1 !important;
+    text-align: left !important;
+    width: 60px !important;
+}
+
+/* BORDERS -- Add ALL borders to the table */
+
+::deep #FACTgrid th {
+    border-left: 1px solid gray !important;
+}
+
+::deep #FACTgrid td {
+    border: 1px solid gray !important;
+}
+
+::deep #FACTgrid table {
+    border-collapse: collapse !important;
+}
+
+/* Header Menu Icons (top) - this move icons up, reduce space between them*/
+
+::deep .e-grid .e-columnmenu{
+    margin: -22px !important;
+}
+
+::deep .e-sortfilterdiv {
+    margin: -28px 0px !important;
+}
+
+/* TOOLBOX */
+
+::deep .e-tab > .e-content > .e-item {
+    font-size: 0.9rem !important;
+}
+
+/* PAGINATOR */
+
+::deep .sf-pager {
+    padding-top: 1px !important;
+    padding-bottom: 3px !important;
+    padding-left:0px !important;
+    background-color: #213040 !important;
+}
+
+/* OTHER SETTINGS */
+
+::deep .NumericBoxCentered > input {
+    text-align:center !important;
+}
+
+::deep .e-datepicker {
+    padding-left:0pt !important;
+    text-align:center !important;
+    cursor:pointer;
+}
+/* COMMENTS */
+::deep .CommentsTable .e-rowcell {
+    padding: 2pt !important;
+}
+
+::deep .FontSmaller {
+    font-size: x-small !important;
+}
+
+::deep .FontSmall {
+    font-size: small !important;
+}
+
+/* PRE-CONSTRUCTION TAB */
+
+::deep .NoDatePickerIcon .e-input-group-icon {
+    display:none !important;
+}
+
+
+/* BOOTSRAP */
+
+::deep .table-striped-custom tbody tr:nth-of-type(odd) {
+    --bs-table-accent-bg: transaparent !important;
+    background-color: rgba(0,0,0,.03);
+}
+
